@@ -616,7 +616,7 @@ mR_move([Y1,Y2,Y3,
 				W4,B5,W6, 
 				W7,B2,W9]
 ).
-%%%
+
 e_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -670,13 +670,13 @@ s_move([Y1,Y2,Y3,
 				W7,W8,W9],
 
 				[Y1,Y2,Y3, 
-				Y4,Y5,Y6, 
+				R2,R5,R8, 
 				Y7,Y8,Y9,
-        G1,G2,G3, O1,O2,O3, B1,B2,B3, R1,R2,R3,
-        G4,G5,G6, O4,O5,O6, B4,B5,B6, R4,R5,R6,
-        G7,G8,G9, O7,O8,O9, B7,B8,B9, R7,R8,R9,
+        G1,G2,G3, O1,Y4,O3, B1,B2,B3, R1,W4,R3,
+        G4,G5,G6, O4,Y5,O6, B4,B5,B6, R4,W5,R6,
+        G7,G8,G9, O7,Y6,O9, B7,B8,B9, R7,W6,R9,
         W1,W2,W3, 
-				W4,W5,W6, 
+				O8,O5,O2, 
 				W7,W8,W9]
 ).
 
@@ -691,13 +691,13 @@ sR_move([Y1,Y2,Y3,
 				W7,W8,W9],
 
 				[Y1,Y2,Y3, 
-				Y4,Y5,Y6, 
+				O2,O5,O8, 
 				Y7,Y8,Y9,
-        G1,G2,G3, O1,O2,O3, B1,B2,B3, R1,R2,R3,
-        G4,G5,G6, O4,O5,O6, B4,B5,B6, R4,R5,R6,
-        G7,G8,G9, O7,O8,O9, B7,B8,B9, R7,R8,R9,
+        G1,G2,G3, O1,W6,O3, B1,B2,B3, R1,Y6,R3,
+        G4,G5,G6, O4,W5,O6, B4,B5,B6, R4,Y5,R6,
+        G7,G8,G9, O7,W4,O9, B7,B8,B9, R7,Y4,R9,
         W1,W2,W3, 
-				W4,W5,W6, 
+				R2,R5,R8, 
 				W7,W8,W9]
 ).
 
