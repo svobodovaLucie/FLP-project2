@@ -1,0 +1,6 @@
+kostka -> r, uR
+kostka1 -> bR, uR, rR, fR
+kostka2 -> rR, lR, uR, dR
+kostka3 -> u, l, b, d
+kostka4 -> u, u, l, f, r
+kostka5 -> 
