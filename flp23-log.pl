@@ -50,73 +50,6 @@ split_lines([],[]).
 split_lines([L|Ls],[H|T]) :- split_lines(Ls,T), split_line(L,H).
 
 
-start :-
-		prompt(_, ''),
-		read_lines(LL),
-		split_lines(LL,S),
-		write(S),
-		halt.
-
-
-/** nacte zadany pocet radku */
-read_lines2([],0).
-read_lines2(Ls,N) :-
-	N > 0,
-	read_line(L,_),
-	N1 is N-1,
-	read_lines2(LLs, N1),
-	Ls = [L|LLs].
-
-
-/** vypise seznam radku (kazdy radek samostatne) */
-write_lines2([]).
-write_lines2([H|T]) :- writeln(H), write_lines2(T). %(writeln je "knihovni funkce")
-
-
-/** rozdeli radek na podseznamy -- pracuje od konce radku */
-%zalozit prvni (tzn. posledni) seznam:
-split_line2([],[[]]) :- !.
-%pridat novy seznam:
-split_line2([' '|T], [[]|S1]) :- !, split_line2(T,S1).
-%pridat novy seznam, uchovat oddelujici znak:
-split_line2([H|T], [[],[H]|S1]) :- (H=','; H=')'; H='('), !, split_line2(T,S1).
-%pridat znak do existujiciho seznamu:
-split_line2([H|T], [[H|G]|S1]) :- split_line2(T,[G|S1]).
-
-
-/** pro vsechny radky vstupu udela split_line2 */
-% vstupem je seznam radku (kazdy radek je seznam znaku)
-split_lines2([],[]).
-split_lines2([L|Ls],[H|T]) :- split_lines2(Ls,T), split_line2(L,H).
-
-
-/** nacte N radku vstupu, zpracuje, vypise */
-start2(N) :-
-		prompt(_, ''),
-		read_lines2(LL, N),
-		split_lines2(LL,S),
-		write_lines2(S).
-
-
-/** prevede retezec na seznam atomu */
-% pr.: string("12.35",S). S = ['1', '2', '.', '3', '5'].
-retezec([],[]).
-retezec([H|T],[C|CT]) :- atom_codes(C,[H]), retezec(T,CT).
-
-
-/** prevede seznam cislic na cislo */
-% pr.: cislo([1,2,'.',3,5],X). X = 12.35
-cislo(N,X) :- cislo(N,0,X).
-cislo([],F,F).
-cislo(['.'|T],F,X) :- !, cislo(T,F,X,10).
-cislo([H|T],F,X) :- FT is 10*F+H, cislo(T,FT,X).
-cislo([],F,F,_).
-cislo([H|T],F,X,P) :- FT is F+H/P, PT is P*10, cislo(T,FT,X,PT).
-
-
-/** existuje knihovni predikat number_chars(?Number, ?CharList) */
-% pr.: number_chars(12.35, ['1', '2', '.', '3', '5']).
-
 
 % TODO
 % nacist vstup
@@ -126,3 +59,34 @@ cislo([H|T],F,X,P) :- FT is F+H/P, PT is P*10, cislo(T,FT,X,PT).
 % dynamicke predikaty pouzit na frontu closed
 % IDS nebo DLS, maximalni hloubka asi cca 10
 
+
+
+
+
+
+%%%%%%%%%%%%%%%%%% my implementation %%%%%%%%%%%%%%%%%%
+/** prints a list representing a Rubik's cube in the format of the input cube */
+print_cube([]).
+print_cube([Row|Rows]) :-
+	print_row(Row),
+	nl,
+	print_cube(Rows).
+
+/** prints a single row of the Rubik's cube */
+print_row([]).
+print_row([Cell|Cells]) :-
+	write_cell(Cell),
+	print_row(Cells).
+
+/** writes a single cell of the Rubik's cube */
+write_cell([X1, X2, X3]) :-
+	format('~w~w~w ', [X1, X2, X3]).
+
+
+start :-
+	prompt(_, ''),
+	read_lines(LL), % read lines from stdin
+	split_lines(LL, Cube), % split lines into a list representing the Rubik's cube
+	print_cube(Cube), % print the Rubik's cube
+	halt.
+	
