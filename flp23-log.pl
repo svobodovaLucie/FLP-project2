@@ -17,6 +17,21 @@ preklad: swipl -q -g start -o flp19-log -c input2.pl
 */
 
 
+% :- dynamic visited_states/1.
+
+
+start :-
+    prompt(_, ''),
+    % read_cube(Cube), % read the Rubik's cube from stdin
+		nread_lines(LL),
+		flatten_list(LL, R),
+		write(R),
+		nl,
+		nl,
+		nprint_cube(R), % print the Rubik's cube
+    halt.
+
+
 /** cte radky ze standardniho vstupu, konci na LF nebo EOF */
 read_line(L,C) :-
 	get_char(C),
@@ -66,145 +81,20 @@ split_line([H|T], [[H|G]|S1]) :- split_line(T,[G|S1]). % G je prvni seznam ze se
 split_lines([],[]).
 split_lines([L|Ls],[H|T]) :- split_lines(Ls,T), split_line(L,H).
 
-
-
-% TODO
-% nacist vstup
-% vygenerovat vsechna mozna reseni 
-% test jestli je dane reseni validni krok
-% na nejake vygenerovane hodnote zastavit
-% dynamicke predikaty pouzit na frontu closed
-% IDS nebo DLS, maximalni hloubka asi cca 10
-
-
-
-
-
-
 %%%%%%%%%%%%%%%%%% print cube %%%%%%%%%%%%%%%%%%
-/** prints a list representing a Rubik's cube in the format of the input cube */
-print_cube([]).
-print_cube([Row|Rows]) :-
-	print_row(Row),
-	nl,
-	print_cube(Rows).
-
-/** prints a single row of the Rubik's cube */
-print_row([]).
-print_row([Cell|Cells]) :-
-	write_cell(Cell),
-	print_row(Cells).
-
-/** writes a single cell of the Rubik's cube */
-write_cell([X1, X2, X3]) :-
-	format('~w~w~w ', [X1, X2, X3]).
-
-
-
-
+nprint_cube([]).
+nprint_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6,F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
+	format('~w~w~w~n', [U1,U2,U3]), % Print the top face
+	format('~w~w~w~n', [U4,U5,U6]), % Print the top face
+	format('~w~w~w~n', [U7,U8,U9]), % Print the top face
+	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3]), % Print the left side
+	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6]), % Print the left side
+	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9]), % Print the left side
+	format('~w~w~w~n', [D1,D2,D3]), % Print the bottom face
+	format('~w~w~w~n', [D4,D5,D6]), % Print the middle layer
+	format('~w~w~w~n', [D7,D8,D9]). % Print the middle layer
 
 %%%%%%%%%%%%%%%%%% representation of the cube %%%%%%%%%%%%%%%%%%
-in_cb([
-	[[5,5,3]],
-	[[5,5,3]],
-	[[5,5,4]],
-	[[2,2,5],[3,2,2],[6,4,4],[1,1,1]],
-	[[1,1,5],[3,2,2],[6,3,3],[4,4,4]],
-	[[1,1,5],[3,2,2],[6,3,3],[4,4,4]],
-	[[6,6,2]],
-	[[6,6,1]],
-	[[6,6,1]]]).
-
-s_cb([
-	[[5,5,5]],
-	[[5,5,5]],
-	[[5,5,5]],
-	[[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
-	[[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
-	[[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
-	[[6,6,6]],
-	[[6,6,6]],
-	[[6,6,6]]]).
-
-%%%%%%%%%%%%%%%%%% test if solved %%%%%%%%%%%%%%%%%%
-solved_cube([
-	[[5,5,5]],
-	[[5,5,5]],
-	[[5,5,5]],
-	[[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
-	[[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
-	[[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
-	[[6,6,6]],
-	[[6,6,6]],
-	[[6,6,6]]]
-).
-
-test_cube(Cube) :-
-	solved_cube(SolvedCube),
-	Cube = SolvedCube.
-
-/** Test if the input Rubik's cube is in the final solved state */
-test_if_solved :-
-	in_cb(X),
-	InputCube = X,
-  ( is_solved_cube(InputCube) ->
-		writeln('The Rubik\'s cube is in the final solved state.')
-	;   
-		writeln('The Rubik\'s cube is not in the final solved state.')
-	).
-
-
-%%%%%%%%%%%%%%%%%% moves %%%%%%%%%%%%%%%%%%
-% Define a predicate for clockwise rotation of the upper face (U)
-rotate_upper_clockwise(Cube, NewCube) :-
-    % Extract the upper face of the cube
-    Cube = [UpperFace | Rest],
-    % Rotate the upper face clockwise
-    rotate_face_clockwise(UpperFace, RotatedUpperFace),
-    % Assemble the new cube with the rotated upper face
-    NewCube = [RotatedUpperFace | Rest].
-
-% Define a predicate for clockwise rotation of a single face
-rotate_face_clockwise(Face, NewFace) :-
-    % Transpose the face matrix
-    transpose(Face, TransposedFace),
-    % Reverse each row of the transposed face matrix
-    maplist(reverse, TransposedFace, NewFace).
-
-% transpose/2 predicate to transpose a matrix
-transpose([], []).
-transpose([[]|_], []).
-transpose(Matrix, [Row|Transposed]) :-
-    transpose_row(Matrix, Row, RestMatrix),
-    transpose(RestMatrix, Transposed).
-
-transpose_row([], [], []).
-transpose_row([[X|Xs]|RestMatrix], [X|FirstColumn], [Xs|RestColumns]) :-
-    transpose_row(RestMatrix, FirstColumn, RestColumns).
-
-
-%%%%%%%%%%%%%%%%%% search algorithm %%%%%%%%%%%%%%%%%%
-
-
-
-%%%%%%%%%%%%%%%%%%%
-var_cube([
-	[[U1,U2,U3]],
-	[[U4,U5,U6]],
-	[[U7,U8,U9]],
-
-	[[F1,F2,F3], [R1,R2,R3], [B1,B2,B3], [L1,L2,L3]],
-	[[F4,F5,F6], [R4,R5,R6], [B4,B5,B6], [L4,L5,L6]],
-	[[F7,F8,F9], [R7,R8,R9], [B7,B8,B9], [L7,L8,L9]],
-
-	[[D1,D2,D3]],
-	[[D4,D5,D6]],
-	[[D7,D8,D9]]
-]).
-
-
-
-%%%%%%%%%%%%%%%%%%%% representation of the cube using variables %%%%%%%%%%%%%%%%%%%%
 ncube([
 	U1,U2,U3,
 	U4,U5,U6,
@@ -219,6 +109,21 @@ ncube([
 	D7,D8,D9]
 ).
 
+ncube_solved([
+	U,U,U,
+	U,U,U,
+	U,U,U,
+
+	F,F,F, R,R,R, B,B,B, L,L,L,
+	F,F,F, R,R,R, B,B,B, L,L,L,
+	F,F,F, R,R,R, B,B,B, L,L,L,
+
+	D,D,D,
+	D,D,D,
+	D,D,D]
+).
+
+%%%%%%%%%%%%%%%%%% test if solved %%%%%%%%%%%%%%%%%%
 nsolved_cube([
 	5,5,5,
 	5,5,5,
@@ -231,94 +136,174 @@ nsolved_cube([
 	6,6,6]
 ).
 
+test_if_solved(Cube) :-
+	ncube_solved(SolvedCube),
+	Cube = SolvedCube.
+
+goal_state(State) :-
+    test_if_solved(State).
+
+
+%%%%%%%%%%%%%%%%%% moves %%%%%%%%%%%%%%%%%%
+% moves([u_move, uR_move, r_move, rR_move, m_move, mR_move]).
+% moves([uR_move, r_move, m_move]).
+
+move(Move, Cube, NewState) :-
+	% available_moves(Moves),
+  % member(Move, Moves),
+	call(Move, Cube, NewState).
+
+
+
+% transition(Cube, NewCube) :-
+% 	u_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	uR_move(Cube, NewCube).
+	
+% transition(Cube, NewCube) :-
+% 	d_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	dR_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	r_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	rR_move(Cube, NewCube).
+	
+% transition(Cube, NewCube) :-
+% 	l_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	lR_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	f_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	fR_move(Cube, NewCube).
+	
+% transition(Cube, NewCube) :-
+% 	b_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	bR_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	m_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	mR_move(Cube, NewCube).
+	
+% transition(Cube, NewCube) :-
+% 	e_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	eR_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	s_move(Cube, NewCube).
+
+% transition(Cube, NewCube) :-
+% 	sR_move(Cube, NewCube).
+	
+
+
+transition(Cube, NextCube, Move) :-
+    (
+        u_move(Cube, NextCube),
+        Move = 'u'
+    ;
+        uR_move(Cube, NextCube),
+        Move = 'uR'
+    ;
+        d_move(Cube, NextCube),
+        Move = 'd'
+    ;
+        dR_move(Cube, NextCube),
+        Move = 'dR'
+    ;
+        r_move(Cube, NextCube),
+        Move = 'r'
+    ;
+        rR_move(Cube, NextCube),
+        Move = 'rR'
+    ;
+        l_move(Cube, NextCube),
+        Move = 'l'
+    ;
+        lR_move(Cube, NextCube),
+        Move = 'lR'
+    ;
+        f_move(Cube, NextCube),
+        Move = 'f'
+    ;
+        fR_move(Cube, NextCube),
+        Move = 'fR'
+    ;
+        b_move(Cube, NextCube),
+        Move = 'b'
+    ;
+        bR_move(Cube, NextCube),
+        Move = 'bR'
+    ;
+        m_move(Cube, NextCube),
+        Move = 'm'
+    ;
+        mR_move(Cube, NextCube),
+        Move = 'mR'
+    ;
+        e_move(Cube, NextCube),
+        Move = 'e'
+    ;
+        eR_move(Cube, NextCube),
+        Move = 'eR'
+    ;
+        s_move(Cube, NextCube),
+        Move = 's'
+    ;
+        sR_move(Cube, NextCube),
+        Move = 'sR'
+    ).
+
+%%%%%%%%%%%%%%%%%% search algorithm %%%%%%%%%%%%%%%%%%
+depth_limited_search(State, Goal, _, [State|Path], Moves) :-
+    test_if_solved(State),
+    nprint_cube(State),
+    nl,
+    format("Moves to reach goal: ~w", [Moves]), % Print the moves that led to the goal
+    nl,
+    Path = [].
+
+depth_limited_search(State, Goal, DepthLimit, [State|Path], Moves) :-
+    DepthLimit > 0,
+    NextDepthLimit is DepthLimit - 1,
+    transition(State, NextState, Move),
+    append(Moves, [Move], NewMoves), % Update the list of moves
+    depth_limited_search(NextState, Goal, NextDepthLimit, Path, NewMoves).
+
+
+% Iterative Deepening Search
+iterative_deepening_search(Start, Goal, Path) :-
+    iterative_deepening_search_helper(Start, Goal, 0, Path, []).
+
+iterative_deepening_search_helper(Start, Goal, DepthLimit, Path, Moves) :-
+    depth_limited_search(Start, Goal, DepthLimit, Path, Moves).
+iterative_deepening_search_helper(Start, Goal, DepthLimit, Path, Moves) :-
+    NextDepthLimit is DepthLimit + 1,
+    iterative_deepening_search_helper(Start, Goal, NextDepthLimit, Path, Moves).
+
+
+
+%%%%%%%%%%%%%%%%%%%% representation of the cube using variables %%%%%%%%%%%%%%%%%%%%
+
+
 flatten_list([], []).
 flatten_list([L|Ls], Flat) :-
     flatten_list(Ls, FlatLs),
     append(L, FlatLs, Flat).
-
-% read_cube(Cube) :-
-%     read_lines(Lines),
-%     flatten_list(Lines, Flat),
-%     maplist(atom_number, Flat, Cube).
-
-
-
-
-
-
-
-%%%%%%%%%%%%%%% start %%%%%%%%%%%%%%%%
-% start :-
-% 	prompt(_, ''),
-% 	read_lines(LL), % read lines from stdin
-% 	split_lines(LL, Cube), % split lines into a list representing the Rubik's cube
-% 	print_cube(Cube), % print the Rubik's cube
-% 	write(Cube),
-% 	halt.
-
-
-
-/** prints a list representing a Rubik's cube in the format of the input cube */
-% print_cube([]).
-% print_cube([Row|Rows]) :-
-% 	print_row(Row),
-% 	nl,
-% 	print_cube(Rows).
-
-% /** prints a single row of the Rubik's cube */
-% print_row([]).
-% print_row([Cell|Cells]) :-
-% 	write_cell(Cell),
-% 	print_row(Cells).
-
-/** writes a single cell of the Rubik's cube */
-% nprint_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3, R1,R2,R3, B1,B2,B3, L1,L2,L3,	F4,F5,F6, 
-% 						 R4,R5,R6, B4,B5,B6, L4,L5,L6, F7,F8,F9, R7,R8,R9, B7,B8,B9, L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
-% 	format('~w~w~w ', U1,U2,U3),
-% 	format('~w~w~w ', U4,U5,U6),
-% 	format('~w~w~w ', U7,U8,U9).
-
-
-start :-
-    prompt(_, ''),
-    % read_cube(Cube), % read the Rubik's cube from stdin
-		nread_lines(LL),
-		flatten_list(LL, R),
-		write(R),
-		nl,
-		nl,
-		nprint_cube(R), % print the Rubik's cube
-    halt.
-
-
-nprint_cube([]).
-nprint_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6,F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
-	format('~w~w~w~n', [U1,U2,U3]), % Print the top face
-	format('~w~w~w~n', [U4,U5,U6]), % Print the top face
-	format('~w~w~w~n', [U7,U8,U9]), % Print the top face
-	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3]), % Print the left side
-	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6]), % Print the left side
-	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9]), % Print the left side
-	format('~w~w~w~n', [D1,D2,D3]), % Print the bottom face
-	format('~w~w~w~n', [D4,D5,D6]), % Print the middle layer
-	format('~w~w~w~n', [D7,D8,D9]). % Print the middle layer
-
-
-% ncube([
-% 	U1,U2,U3,
-% 	U4,U5,U6,
-% 	U7,U8,U9,
-
-% 	F1,F2,F3, R1,R2,R3, B1,B2,B3, L1,L2,L3,
-% 	F4,F5,F6, R4,R5,R6, B4,B5,B6, L4,L5,L6,
-% 	F7,F8,F9, R7,R8,R9, B7,B8,B9, L7,L8,L9,
-
-% 	D1,D2,D3,
-% 	D4,D5,D6,
-% 	D7,D8,D9]
-% ).
-
-nin_cube([5,5,3,5,5,3,5,5,4,2,2,5,3,2,2,6,4,4,1,1,1,1,1,5,3,2,2,6,3,3,4,4,4,1,1,5,3,2,2,6,3,3,4,4,4,6,6,2,6,6,1,6,6,1]).
 
 u_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -701,6 +686,8 @@ sR_move([Y1,Y2,Y3,
 				W7,W8,W9]
 ).
 
+% testing cubes
+nin_cube([5,5,3,5,5,3,5,5,4,2,2,5,3,2,2,6,4,4,1,1,1,1,1,5,3,2,2,6,3,3,4,4,4,1,1,5,3,2,2,6,3,3,4,4,4,6,6,2,6,6,1,6,6,1]).
 kostka1(['B','R','R','O','W','W','G','G','G','W','W','W','O','B','B','W','W','O','W','G','R','G','G','Y','R','R','Y','B','B','O','W','O','Y','G','G','Y','R','R','Y','B','B','Y','O','O','Y','R','R','B','Y','Y','B','G','O','O']).
 kostka2(['R','W','R','B','W','G','O','W','O','W','R','Y','G','R','B','W','O','Y','B','O','G','W','G','Y','G','R','B','W','B','Y','B','O','G','W','O','Y','G','R','B','W','R','Y','B','O','G','R','Y','R','G','Y','B','O','Y','O']).
 kostka3(['O','W','W','O','W','W','G','G','R','O','O','G','Y','G','G','R','R','W','B','B','W','Y','G','G','R','R','W','B','B','W','O','O','G','B','R','R','B','B','W','B','B','G','Y','Y','Y','O','Y','Y','O','Y','Y','O','R','R']).
@@ -747,3 +734,4 @@ kostka_mR([
 	'W','O','W',
 	'W','O','W',
 	'W','O','W']).
+
