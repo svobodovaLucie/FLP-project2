@@ -24,11 +24,14 @@ start :-
     prompt(_, ''),
     % read_cube(Cube), % read the Rubik's cube from stdin
 		nread_lines(LL),
-		flatten_list(LL, R),
-		write(R),
-		nl,
-		nl,
-		nprint_cube(R), % print the Rubik's cube
+		flatten_list(LL, InitialCubeState),
+
+		nsolved_cube(SolvedCube),
+		% write(R), 
+		% nl,
+		% nl,
+		% nprint_cube(R), % print the Rubik's cube
+		iterative_deepening_search(InitialCubeState, SolvedCube, Solution),
     halt.
 
 
@@ -148,11 +151,6 @@ goal_state(State) :-
 % moves([u_move, uR_move, r_move, rR_move, m_move, mR_move]).
 % moves([uR_move, r_move, m_move]).
 
-move(Move, Cube, NewState) :-
-	% available_moves(Moves),
-  % member(Move, Moves),
-	call(Move, Cube, NewState).
-
 
 
 % transition(Cube, NewCube) :-
@@ -214,86 +212,136 @@ move(Move, Cube, NewState) :-
 transition(Cube, NextCube, Move) :-
     (
         u_move(Cube, NextCube),
-        Move = 'u'
+        Move = 'u_move'
     ;
         uR_move(Cube, NextCube),
-        Move = 'uR'
+        Move = 'uR_move'
     ;
         d_move(Cube, NextCube),
-        Move = 'd'
+        Move = 'd_move'
     ;
         dR_move(Cube, NextCube),
-        Move = 'dR'
+        Move = 'dR_move'
     ;
         r_move(Cube, NextCube),
-        Move = 'r'
+        Move = 'r_move'
     ;
         rR_move(Cube, NextCube),
-        Move = 'rR'
+        Move = 'rR_move'
     ;
         l_move(Cube, NextCube),
-        Move = 'l'
+        Move = 'l_move'
     ;
         lR_move(Cube, NextCube),
-        Move = 'lR'
+        Move = 'lR_move'
     ;
         f_move(Cube, NextCube),
-        Move = 'f'
+        Move = 'f_move'
     ;
         fR_move(Cube, NextCube),
-        Move = 'fR'
+        Move = 'fR_move'
     ;
         b_move(Cube, NextCube),
-        Move = 'b'
+        Move = 'b_move'
     ;
         bR_move(Cube, NextCube),
-        Move = 'bR'
+        Move = 'bR_move'
     ;
         m_move(Cube, NextCube),
-        Move = 'm'
+        Move = 'm_move'
     ;
         mR_move(Cube, NextCube),
-        Move = 'mR'
+        Move = 'mR_move'
     ;
         e_move(Cube, NextCube),
-        Move = 'e'
+        Move = 'e_move'
     ;
         eR_move(Cube, NextCube),
-        Move = 'eR'
+        Move = 'eR_move'
     ;
         s_move(Cube, NextCube),
-        Move = 's'
+        Move = 's_move'
     ;
         sR_move(Cube, NextCube),
-        Move = 'sR'
+        Move = 'sR_move'
     ).
 
+move(Move, Cube, NewState) :-
+	% available_moves(Moves),
+  % member(Move, Moves),
+	call(Move, Cube, NewState).
+
+
+
+% nprint_solution_moves(Start, Moves).
+% Print the sequence of states after app );lying the moves
+
+nprint_solution_moves(Start, []).% :-
+	% format('End\n').%
+
+nprint_solution_moves(Start, [Move | Moves]) :-
+    % move(Move, Start, NewState),
+		% format('Move: ~w\n', [Move]),
+		call(Move, Start, NewState),
+		% nprint_cube(Start),
+		nl,
+		nprint_cube(NewState), % TODO move, print, move, print
+    % print_states(States).
+		nprint_solution_moves(NewState, Moves).
+
+% Print a list of cube states
+% print_states([]).
+% print_states([State|States]) :-
+%     nprint_cube(State),
+%     nl,
+%     print_states(States).
+
+
 %%%%%%%%%%%%%%%%%% search algorithm %%%%%%%%%%%%%%%%%%
-depth_limited_search(State, Goal, _, [State|Path], Moves) :-
+depth_limited_search(InitialCube, State, Goal, _, [State|Path], Moves) :-
     test_if_solved(State),
-    nprint_cube(State),
-    nl,
-    format("Moves to reach goal: ~w", [Moves]), % Print the moves that led to the goal
-    nl,
+    % nprint_cube(State),
+    % nl,
+    % format('Moves to reach goal: ~w\n', [Moves]), % Print the moves that led to the goal
+		% nprint_solution()
+    % nl,
+		% nprint_solution_moves()
+		% format('Initial Start: \n'),
+		% nprint_cube(State),
+		% format('Path: ~w\n', [Path]),
+		nprint_solution_moves(InitialCube, Moves),
     Path = [].
 
-depth_limited_search(State, Goal, DepthLimit, [State|Path], Moves) :-
+depth_limited_search(InitialCube, State, Goal, DepthLimit, [State|Path], Moves) :-
     DepthLimit > 0,
     NextDepthLimit is DepthLimit - 1,
     transition(State, NextState, Move),
     append(Moves, [Move], NewMoves), % Update the list of moves
-    depth_limited_search(NextState, Goal, NextDepthLimit, Path, NewMoves).
+    depth_limited_search(InitialCube, NextState, Goal, NextDepthLimit, Path, NewMoves).
 
 
 % Iterative Deepening Search
 iterative_deepening_search(Start, Goal, Path) :-
-    iterative_deepening_search_helper(Start, Goal, 0, Path, []).
+		nprint_cube(Start),
+    iterative_deepening_search_helper(Start, Start, Goal, 0, Path, []).
+		% depth_limited_search(Start, Start, Goal, 2, Path, []).
+		%print ideally here
+		% write('Start Cube\n'),
+		% nprint_cube(Start).
 
-iterative_deepening_search_helper(Start, Goal, DepthLimit, Path, Moves) :-
-    depth_limited_search(Start, Goal, DepthLimit, Path, Moves).
-iterative_deepening_search_helper(Start, Goal, DepthLimit, Path, Moves) :-
+iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
+    % if the solution is found, prints it
+		depth_limited_search(InitialCube, Start, Goal, DepthLimit, Path, Moves).
+		% format('Moves in IDS Helper: ~w\n', [Moves]),
+		% format('Initial Cube:\n'),
+		% nth0(0, Path, FirstInPathIsInitial),
+		% nprint_cube(FirstInPathIsInitial),
+		% nprint_solution_moves(InitialCube, Moves).
+		
+
+iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
     NextDepthLimit is DepthLimit + 1,
-    iterative_deepening_search_helper(Start, Goal, NextDepthLimit, Path, Moves).
+    iterative_deepening_search_helper(InitialCube, Start, Goal, NextDepthLimit, Path, Moves).
 
 
 
@@ -494,7 +542,6 @@ f_move([W1,W2,W3,
         R7,R4,R1, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9]
-
 ).
 
 fR_move([W1,W2,W3, 
