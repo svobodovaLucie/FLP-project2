@@ -7,75 +7,75 @@
 % Description: This project involves the implementation of a Rubik's Cube solver in Prolog.
 %              
 
-:- dynamic visited/2.
-
-
-% TODO add closed
-% TODO check particularly for the numbers (now it works for kostka_bad -> but the solution is wrong)
-
 start :-
     prompt(_, ''),
-    % read_cube(Cube),
-		nread_lines(LL),
-		flatten_list(LL, InitialCubeState),
-		nsolved_cube(SolvedCube),
-		nprint_cube(InitialCubeState),
-		iterative_deepening_search(InitialCubeState, SolvedCube, Solution),
+		read_input_cube(_, InitialCubeState),
+		print_cube(InitialCubeState),
+		iterative_deepening_search(InitialCubeState, _),
     halt.
 
 
-/** cte radky ze standardniho vstupu, konci na LF nebo EOF */
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Input Handling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+read_input_cube(Input, Cube) :-
+	read_lines(Input),
+	flatten_list(Input, Cube).
+
 read_line(L,C) :-
 	get_char(C),
-	(isEOFEOL(C), L = [], !;
-		read_line(LL,_),% atom_codes(C,[Cd]),
-		[C|LL] = L).
-
-
-nread_line(L,C) :-
-	get_char(C),
 	(
-		C == ' ' -> nread_line(L,_)
+		C == ' ' -> read_line(L,_)
 		;
 		(isEOFEOL(C), L = [], !;
-		nread_line(LL,_),% atom_codes(C,[Cd]),
+		read_line(LL,_),
 		[C|LL] = L)
 	).
 
-
-/** testuje znak na EOF nebo LF */
 isEOFEOL(C) :-
 	C == end_of_file;
 	(char_code(C,Code), Code==10).
 
-
 read_lines(Ls) :-
 	read_line(L,C),
-	( C == end_of_file, Ls = [] ;
-	  read_lines(LLs), Ls = [L|LLs]
-	).
-
-nread_lines(Ls) :-
-	nread_line(L,C),
 	( C == end_of_file ; C == ' ' ; C == '\t', Ls = [] ;
-		nread_lines(LLs), Ls = [L|LLs]
+		read_lines(LLs), Ls = [L|LLs]
 	).
 
+flatten_list([], []).
+flatten_list([L|Ls], Flat) :-
+    flatten_list(Ls, FlatLs),
+    append(L, FlatLs, Flat).
 
-/** rozdeli radek na podseznamy */
-split_line([],[[]]) :- !.
-split_line([' '|T], [[]|S1]) :- !, split_line(T,S1).
-split_line([32|T], [[]|S1]) :- !, split_line(T,S1).    % aby to fungovalo i s retezcem na miste seznamu
-split_line([H|T], [[H|G]|S1]) :- split_line(T,[G|S1]). % G je prvni seznam ze seznamu seznamu G|S1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Search Algorithm %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+depth_limited_search(InitialCube, State, _, [State|Path], Moves) :-
+    test_if_solved(State),
+		print_solution_moves(InitialCube, Moves),
+    Path = [].
 
+depth_limited_search(InitialCube, State, DepthLimit, [State|Path], Moves) :-
+    DepthLimit > 0,
+    NextDepthLimit is DepthLimit - 1,
+    transition(State, NextState, Move),
+    append(Moves, [Move], NewMoves), % Update the list of moves
+    depth_limited_search(InitialCube, NextState, NextDepthLimit, Path, NewMoves).
 
-/** vstupem je seznam radku (kazdy radek je seznam znaku) */
-split_lines([],[]).
-split_lines([L|Ls],[H|T]) :- split_lines(Ls,T), split_line(L,H).
+iterative_deepening_search(Start, Path) :-
+    iterative_deepening_search_helper(Start, Start, 0, Path, []).
 
-%%%%%%%%%%%%%%%%%% print cube %%%%%%%%%%%%%%%%%%
-nprint_cube([]).
-nprint_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6,F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
+% iterative_deepening_search_helper(InitialCube, Start, DepthLimit, Path, Moves) :-
+% 		DepthLimit =:= 8,
+% 		write('Depth Limit Reached.\n'),
+% 		!.
+		
+iterative_deepening_search_helper(InitialCube, Start, DepthLimit, Path, Moves) :-
+		depth_limited_search(InitialCube, Start, DepthLimit, Path, Moves).
+
+iterative_deepening_search_helper(InitialCube, Start, DepthLimit, Path, Moves) :-
+    NextDepthLimit is DepthLimit + 1,
+    iterative_deepening_search_helper(InitialCube, Start, NextDepthLimit, Path, Moves).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Printing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+print_cube([]).
+print_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6,F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
 	format('~w~w~w~n', [U1,U2,U3]), % Print the top face
 	format('~w~w~w~n', [U4,U5,U6]), % Print the top face
 	format('~w~w~w~n', [U7,U8,U9]), % Print the top face
@@ -86,49 +86,34 @@ nprint_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F
 	format('~w~w~w~n', [D4,D5,D6]), % Print the middle layer
 	format('~w~w~w~n', [D7,D8,D9]). % Print the middle layer
 
-%%%%%%%%%%%%%%%%%% representation of the cube %%%%%%%%%%%%%%%%%%
-ncube([
-	U1,U2,U3,
-	U4,U5,U6,
-	U7,U8,U9,
 
-	F1,F2,F3, R1,R2,R3, B1,B2,B3, L1,L2,L3,
-	F4,F5,F6, R4,R5,R6, B4,B5,B6, L4,L5,L6,
-	F7,F8,F9, R7,R8,R9, B7,B8,B9, L7,L8,L9,
+print_solution_moves(_, []).
 
-	D1,D2,D3,
-	D4,D5,D6,
-	D7,D8,D9]
-).
+print_solution_moves(Start, [Move | Moves]) :-
+		format('\nMove: ~w', [Move]),
+		call(Move, Start, NewState),
+		nl,
+		print_cube(NewState),
+		print_solution_moves(NewState, Moves).
 
-% ncube_solved([
-% 	U,U,U,
-% 	U,U,U,
-% 	U,U,U,
 
-% 	F,F,F, R,R,R, B,B,B, L,L,L,
-% 	F,F,F, R,R,R, B,B,B, L,L,L,
-% 	F,F,F, R,R,R, B,B,B, L,L,L,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Representation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% cube([
+% 	U1,U2,U3,
+% 	U4,U5,U6,
+% 	U7,U8,U9,
 
-% 	D,D,D,
-% 	D,D,D,
-% 	D,D,D]
+% 	F1,F2,F3, R1,R2,R3, B1,B2,B3, L1,L2,L3,
+% 	F4,F5,F6, R4,R5,R6, B4,B5,B6, L4,L5,L6,
+% 	F7,F8,F9, R7,R8,R9, B7,B8,B9, L7,L8,L9,
+
+% 	D1,D2,D3,
+% 	D4,D5,D6,
+% 	D7,D8,D9]
 % ).
 
-%%%%%%%%%%%%%%%%%% test if solved %%%%%%%%%%%%%%%%%%
-% nsolved_cube([
-% 	5,5,5,
-% 	5,5,5,
-% 	5,5,5,
-% 	1,1,1, 2,2,2, 3,3,3, 4,4,4,
-% 	1,1,1, 2,2,2, 3,3,3, 4,4,4,
-% 	1,1,1, 2,2,2, 3,3,3, 4,4,4,
-% 	6,6,6,
-% 	6,6,6,
-% 	6,6,6]
-% ).
-
-nsolved_cube([
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Solved Cube %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+solved_cube([
 	'5','5','5',
 	'5','5','5',
 	'5','5','5',
@@ -141,15 +126,11 @@ nsolved_cube([
 ).
 
 test_if_solved(Cube) :-
-	% format('Cube  : ~w\n', [Cube]),
-	nsolved_cube(SolvedCube),
-	% format('Solved: ~w\n', [SolvedCube]),
+	solved_cube(SolvedCube),
 	Cube == SolvedCube.
 
-goal_state(State) :-
-    test_if_solved(State).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Moves %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%% moves %%%%%%%%%%%%%%%%%%
 transition(Cube, NextCube, Move) :-
     (
         u_move(Cube, NextCube),
@@ -209,85 +190,17 @@ transition(Cube, NextCube, Move) :-
 
 move(Move, Cube, NewState) :-
 	call(Move, Cube, NewState).
-
-nprint_solution_moves(Start, []).
-
-nprint_solution_moves(Start, [Move | Moves]) :-
-		format('\nMove: ~w', [Move]),
-		call(Move, Start, NewState),
-		nl,
-		nprint_cube(NewState),
-		nprint_solution_moves(NewState, Moves).
-
-%%%%%%%%%%%%%%%%%% search algorithm %%%%%%%%%%%%%%%%%%
-% %% without visited
-depth_limited_search(InitialCube, State, Goal, _, [State|Path], Moves) :-
-    test_if_solved(State),
-		nprint_solution_moves(InitialCube, Moves),
-    Path = [].
-
-depth_limited_search(InitialCube, State, Goal, DepthLimit, [State|Path], Moves) :-
-    DepthLimit > 0,
-    NextDepthLimit is DepthLimit - 1,
-    transition(State, NextState, Move),
-    append(Moves, [Move], NewMoves), % Update the list of moves
-    depth_limited_search(InitialCube, NextState, Goal, NextDepthLimit, Path, NewMoves).
-
-% Iterative Deepening Search
-iterative_deepening_search(Start, Goal, Path) :-
-    iterative_deepening_search_helper(Start, Start, Goal, 0, Path, []).
-
-iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
-		DepthLimit =:= 8,
-		write('Depth Limit Reached.\n'),
-		!.
-		
-iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
-		depth_limited_search(InitialCube, Start, Goal, DepthLimit, Path, Moves).
-
-iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
-    NextDepthLimit is DepthLimit + 1,
-    iterative_deepening_search_helper(InitialCube, Start, Goal, NextDepthLimit, Path, Moves).
-		
-% %% with dynamic visited/2
-% depth_limited_search(InitialCube, State, Goal, _, [State|Path], Moves) :-
-%     test_if_solved(State),
-% 		nprint_solution_moves(InitialCube, Moves),
-%     Path = [].
-
-% depth_limited_search(InitialCube, State, Goal, DepthLimit, [State|Path], Moves) :-
-%     DepthLimit > 0,
-		
-%     NextDepthLimit is DepthLimit - 1,
-%     transition(State, NextState, Move),
-% 		\+ visited(State, Move),
-%     append(Moves, [Move], NewMoves), % Update the list of moves
-%     depth_limited_search(InitialCube, NextState, Goal, NextDepthLimit, Path, NewMoves),
-% 		assertz(visited(State, Move)).
-
-% iterative_deepening_search(Start, Goal, Path) :-
-%     iterative_deepening_search_helper(Start, Start, Goal, 0, Path, []).
-
-% iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
-% 		DepthLimit =:= 8,
-% 		write('Depth Limit Reached.\n'),
-% 		!.
-		
-% iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
-% 		depth_limited_search(InitialCube, Start, Goal, DepthLimit, Path, Moves).
-
-% iterative_deepening_search_helper(InitialCube, Start, Goal, DepthLimit, Path, Moves) :-
-%     NextDepthLimit is DepthLimit + 1,
-% 		retractall(visited(_)),
-%     iterative_deepening_search_helper(InitialCube, Start, Goal, NextDepthLimit, Path, Moves).
 		
 
-%%%%%%%%%%%%%%%%%%%% representation of the cube using variables %%%%%%%%%%%%%%%%%%%%
-flatten_list([], []).
-flatten_list([L|Ls], Flat) :-
-    flatten_list(Ls, FlatLs),
-    append(L, FlatLs, Flat).
 
+
+
+
+/**
+ * u_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the upper face of a Rubik's cube.
+ */
 u_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -309,6 +222,11 @@ u_move([W1,W2,W3,
 				Y7,Y8,Y9]
 ).
 
+/**
+ * uR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the upper face of a Rubik's cube.
+ */
 uR_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -330,6 +248,11 @@ uR_move([W1,W2,W3,
 				Y7,Y8,Y9]
 ).
 
+/**
+ * d_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the downer face of a Rubik's cube.
+ */
 d_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -349,9 +272,13 @@ d_move([W1,W2,W3,
         Y7,Y4,Y1, 
 				Y8,Y5,Y2, 
 				Y9,Y6,Y3]
-
 ).
 
+/**
+ * dR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the downer face of a Rubik's cube.
+ */
 dR_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -371,9 +298,13 @@ dR_move([W1,W2,W3,
         Y3,Y6,Y9, 
 				Y2,Y5,Y8, 
 				Y1,Y4,Y7]
-
 ).
 
+/**
+ * r_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the right face of a Rubik's cube.
+ */
 r_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -395,6 +326,11 @@ r_move([W1,W2,W3,
 				Y7,Y8,B7]
 ).
 
+/**
+ * rR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the right face of a Rubik's cube.
+ */
 rR_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -416,6 +352,11 @@ rR_move([W1,W2,W3,
 				Y7,Y8,G9]
 ).
 
+/**
+ * l_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the left face of a Rubik's cube.
+ */
 l_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -437,6 +378,11 @@ l_move([W1,W2,W3,
 				G7,Y8,Y9]
 ).
 
+/**
+ * lR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the left face of a Rubik's cube.
+ */
 lR_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -458,6 +404,11 @@ lR_move([W1,W2,W3,
 				B3,Y8,Y9]
 ).
 
+/**
+ * f_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the front face of a Rubik's cube.
+ */
 f_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -479,6 +430,11 @@ f_move([W1,W2,W3,
 				Y7,Y8,Y9]
 ).
 
+/**
+ * fR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the front face of a Rubik's cube.
+ */
 fR_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -500,6 +456,11 @@ fR_move([W1,W2,W3,
 				Y7,Y8,Y9]
 ).
 
+/**
+ * b_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the back face of a Rubik's cube.
+ */
 b_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -521,6 +482,11 @@ b_move([W1,W2,W3,
 				O1,O4,O7]
 ).
 
+/**
+ * bR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the back face of a Rubik's cube.
+ */
 bR_move([W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
@@ -542,6 +508,12 @@ bR_move([W1,W2,W3,
 				R9,R6,R3]
 ).
 
+/**
+ * m_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the middle vertical slice of a Rubik's cube 
+ * parallel to the left and right faces.
+ */
 m_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -563,6 +535,12 @@ m_move([Y1,Y2,Y3,
 				W7,G8,W9]
 ).
 
+/**
+ * mR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the middle vertical slice of a Rubik's cube 
+ * parallel to the left and right faces.
+ */
 mR_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -584,6 +562,11 @@ mR_move([Y1,Y2,Y3,
 				W7,B2,W9]
 ).
 
+/**
+ * e_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the middle horizontal slice of a Rubik's cube.
+ */
 e_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -605,6 +588,11 @@ e_move([Y1,Y2,Y3,
 				W7,W8,W9]
 ).
 
+/**
+ * eR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the middle horizontal slice of a Rubik's cube.
+ */
 eR_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -626,6 +614,12 @@ eR_move([Y1,Y2,Y3,
 				W7,W8,W9]
 ).
 
+/**
+ * s_move(+State, -NewState)
+ *
+ * Predicate representing a clockwise rotation of the middle vertical slice of a Rubik's cube 
+ * parallel to the front and back faces.
+ */
 s_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -647,6 +641,12 @@ s_move([Y1,Y2,Y3,
 				W7,W8,W9]
 ).
 
+/**
+ * sR_move(+State, -NewState)
+ *
+ * Predicate representing a counterclockwise rotation of the middle vertical slice of a Rubik's cube 
+ * parallel to the front and back faces.
+ */
 sR_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
@@ -667,53 +667,3 @@ sR_move([Y1,Y2,Y3,
 				R2,R5,R8, 
 				W7,W8,W9]
 ).
-
-% testing cubes
-nin_cube([5,5,3,5,5,3,5,5,4,2,2,5,3,2,2,6,4,4,1,1,1,1,1,5,3,2,2,6,3,3,4,4,4,1,1,5,3,2,2,6,3,3,4,4,4,6,6,2,6,6,1,6,6,1]).
-kostka1(['B','R','R','O','W','W','G','G','G','W','W','W','O','B','B','W','W','O','W','G','R','G','G','Y','R','R','Y','B','B','O','W','O','Y','G','G','Y','R','R','Y','B','B','Y','O','O','Y','R','R','B','Y','Y','B','G','O','O']).
-kostka2(['R','W','R','B','W','G','O','W','O','W','R','Y','G','R','B','W','O','Y','B','O','G','W','G','Y','G','R','B','W','B','Y','B','O','G','W','O','Y','G','R','B','W','R','Y','B','O','G','R','Y','R','G','Y','B','O','Y','O']).
-kostka3(['O','W','W','O','W','W','G','G','R','O','O','G','Y','G','G','R','R','W','B','B','W','Y','G','G','R','R','W','B','B','W','O','O','G','B','R','R','B','B','W','B','B','G','Y','Y','Y','O','Y','Y','O','Y','Y','O','R','R']).
-kostka4(['R','R','G','B','W','G','B','W','W','Y','B','R','B','W','W','O','W','W','G','R','R','Y','G','G','Y','R','R','Y','B','W','O','O','O','Y','G','G','Y','R','R','Y','B','W','O','O','O','B','O','O','B','Y','G','B','Y','G']).
-kostka_s(['Y','Y','Y','G','G','G','Y','Y','Y','O','O','O','B','Y','B','R','R','R','G','W','G','O','O','O','B','Y','B','R','R','R','G','W','G','O','O','O','B','Y','B','R','R','R','G','W','G','W','W','W','B','B','B','W','W','W']).
-kostka_sR(['Y','Y','Y','R','R','R','Y','Y','Y','B','B','B','R','W','R','G','G','G','O','Y','O','B','B','B','R','W','R','G','G','G','O','Y','O','B','B','B','R','W','R','G','G','G','O','Y','O','W','W','W','O','O','O','W','W','W']).
-kostka_e([
-	'Y','Y','Y',
-	'Y','Y','Y',
-	'Y','Y','Y',
-	'G','G','G', 'O','O','O', 'B','B','B', 'R','R','R',
-	'R','R','R', 'G','G','G', 'O','O','O', 'B','B','B',
-	'G','G','G', 'O','O','O', 'B','B','B', 'R','R','R', 
-	'W','W','W',
-	'W','W','W',
-	'W','W','W']).
-kostka_eR([
-	'Y','Y','Y',
-	'Y','Y','Y',
-	'Y','Y','Y',
-	'B','B','B', 'R','R','R', 'G','G','G', 'O','O','O', 
-	'R','R','R', 'G','G','G', 'O','O','O', 'B','B','B', 
-	'B','B','B', 'R','R','R', 'G','G','G', 'O','O','O', 
-	'W','W','W',
-	'W','W','W',
-	'W','W','W']).
-kostka_m([
-	'Y','O','Y',
-	'Y','O','Y',
-	'Y','O','Y',
-	'R','Y','R', 'G','G','G', 'O','W','O', 'B','B','B',
-	'R','Y','R', 'G','G','G', 'O','W','O', 'B','B','B',
-	'R','Y','R', 'G','G','G', 'O','W','O', 'B','B','B',
-	'W','R','W',
-	'W','R','W',
-	'W','R','W']).
-kostka_mR([
-	'Y','R','Y',
-	'Y','R','Y',
-	'Y','R','Y',
-	'R','W','R', 'G','G','G', 'O','Y','O', 'B','B','B',
-	'R','W','R', 'G','G','G', 'O','Y','O', 'B','B','B',
-	'R','W','R', 'G','G','G', 'O','Y','O', 'B','B','B',
-	'W','O','W',
-	'W','O','W',
-	'W','O','W']).
-
