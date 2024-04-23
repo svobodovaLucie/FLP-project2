@@ -3,116 +3,184 @@
 % Author:      Lucie Svobodova, xsvobo1x@stud.fit.vutbr.cz 
 % Year:        2023/2024
 % University:  Brno University of Technology, Faculty of Information Technology
-% 
-% Description: This project involves the implementation of a Rubik's Cube solver in Prolog.
-%              
+%
+% Description: This project implements a Rubik's Cube solver in Prolog. The solver performs 
+%              an Iterative Deepening Search (IDS) algorithm to find a solution for a given 
+%              Rubik's Cube, which is read from standard input. Upon finding a solution, 
+%              the solver prints the sequence of moves required to solve the cube.
 
+/**
+ * start
+ *
+ * Starts the program. Loads a Rubik's cube from the input and performs an iterative 
+ * deepening search to find a solution.
+ */
 start :-
-    prompt(_, ''),
-		read_input_cube(_, InitialCubeState),
-		print_cube(InitialCubeState),
-		iterative_deepening_search(InitialCubeState, _),
-    halt.
+	prompt(_, ''),
+	read_input_cube(_, InitialCubeState),
+	print_cube(InitialCubeState),
+	iterative_deepening_search(InitialCubeState, _),
+	halt.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Input Handling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/**
+ * read_input_cube(+Input, -Cube)
+
+ * Reads the Rubik's cube from standard input.
+ * @arg Input input from standard input
+ * @arg Cube  loaded Rubik's cube  
+ */
 read_input_cube(Input, Cube) :-
 	read_lines(Input),
 	flatten_list(Input, Cube).
 
+/**
+ * read_line(-Line, +Char)
+ *
+ * Reads a single line from standard input.
+ *
+ * @arg Line  list representing the read line
+ * @arg Char  character read from input
+ */
 read_line(L,C) :-
 	get_char(C),
-	(
-		C == ' ' -> read_line(L,_)
-		;
-		(isEOFEOL(C), L = [], !;
-		read_line(LL,_),
-		[C|LL] = L)
+	( C == ' ' -> read_line(L,_)
+	; ( isEOFEOL(C), L = [], !;
+			read_line(LL,_),
+			[C|LL] = L)
 	).
 
+/**
+ * isEOFEOL(+Char)
+ *
+ * Checks if the character represents end of file or end of line.
+ * @arg Char character to check
+ */
 isEOFEOL(C) :-
 	C == end_of_file;
 	(char_code(C,Code), Code==10).
 
+/**
+ * read_lines(-Lines)
+ *
+ * Reads all lines from standard input.
+ * @arg Lines list of lines read from input
+ */
 read_lines(Ls) :-
 	read_line(L,C),
 	( C == end_of_file ; C == ' ' ; C == '\t', Ls = [] ;
 		read_lines(LLs), Ls = [L|LLs]
 	).
 
+/**
+ * flatten_list(+List, -FlatList)
+ *
+ * Flattens a list of lists.
+ * @arg List  list of lists
+ * @arg Flat  flattened list
+ */
 flatten_list([], []).
-flatten_list([L|Ls], Flat) :-
-    flatten_list(Ls, FlatLs),
-    append(L, FlatLs, Flat).
+flatten_list([L|Ls], FlatList) :-
+	flatten_list(Ls, FlatLs),
+	append(L, FlatLs, FlatList).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Search Algorithm %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/**
+ * depth_limited_search(+InitialCube, +State, +DepthLimit, ?Path, ?Moves)
+ *
+ * Performs depth-limited search to find a solution within a specified depth limit.
+ * @arg InitialCube the initial state of the Rubik's cube
+ * @arg State       the current state of the Rubik's cube
+ * @arg DepthLimit  the depth limit for the search
+ * @arg Path        the resulting solution path
+ * @arg Moves       list of moves made to reach the current state
+ */
 depth_limited_search(InitialCube, State, _, [State|Path], Moves) :-
-    test_if_solved(State),
-		print_solution_moves(InitialCube, Moves),
-    Path = [].
+	test_if_solved(State),
+	print_solution_moves(InitialCube, Moves),
+	Path = [].
 
 depth_limited_search(InitialCube, State, DepthLimit, [State|Path], Moves) :-
-    DepthLimit > 0,
-    NextDepthLimit is DepthLimit - 1,
-    transition(State, NextState, Move),
-    append(Moves, [Move], NewMoves), % Update the list of moves
-    depth_limited_search(InitialCube, NextState, NextDepthLimit, Path, NewMoves).
+	DepthLimit > 0,
+	NextDepthLimit is DepthLimit - 1,
+	move(State, NextState, Move),
+	append(Moves, [Move], NewMoves),
+	depth_limited_search(InitialCube, NextState, NextDepthLimit, Path, NewMoves).
 
+/**
+ * iterative_deepening_search(+Start, -Path)
+ *
+ * Performs an iterative deepening search to find a solution.
+ * @arg Start the initial state of the Rubik's cube
+ * @arg Path  the resulting solution path
+ */
 iterative_deepening_search(Start, Path) :-
-    iterative_deepening_search_helper(Start, Start, 0, Path, []).
-
-% iterative_deepening_search_helper(InitialCube, Start, DepthLimit, Path, Moves) :-
-% 		DepthLimit =:= 8,
-% 		write('Depth Limit Reached.\n'),
-% 		!.
+	iterative_deepening_search_iter(Start, Start, 0, Path, []).
 		
-iterative_deepening_search_helper(InitialCube, Start, DepthLimit, Path, Moves) :-
-		depth_limited_search(InitialCube, Start, DepthLimit, Path, Moves).
+/**
+ * iterative_deepening_search_iter(+InitialCube, +Start, +DepthLimit, ?Path, ?Moves)
+ *
+ * Helper predicate for performing iterative deepening search.
+ * @arg InitialCube the initial state of the Rubik's cube
+ * @arg Start       the current state of the Rubik's cube
+ * @arg DepthLimit  the current depth limit for the search
+ * @arg Path        the resulting solution path
+ * @arg Moves       list of moves made to reach the current state
+ */
+iterative_deepening_search_iter(InitialCube, Start, DepthLimit, Path, Moves) :-
+	depth_limited_search(InitialCube, Start, DepthLimit, Path, Moves).
 
-iterative_deepening_search_helper(InitialCube, Start, DepthLimit, Path, Moves) :-
-    NextDepthLimit is DepthLimit + 1,
-    iterative_deepening_search_helper(InitialCube, Start, NextDepthLimit, Path, Moves).
+iterative_deepening_search_iter(InitialCube, Start, DepthLimit, Path, Moves) :-
+	NextDepthLimit is DepthLimit + 1,
+	iterative_deepening_search_iter(InitialCube, Start, NextDepthLimit, Path, Moves).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Printing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/**
+ * print_cube(+Cube)
+ *
+ * Prints the Rubik's cube representation.
+ * @arg Cube list representing the Rubik's cube
+ */
 print_cube([]).
-print_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6,F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
-	format('~w~w~w~n', [U1,U2,U3]), % Print the top face
-	format('~w~w~w~n', [U4,U5,U6]), % Print the top face
-	format('~w~w~w~n', [U7,U8,U9]), % Print the top face
-	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3]), % Print the left side
-	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6]), % Print the left side
-	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9]), % Print the left side
-	format('~w~w~w~n', [D1,D2,D3]), % Print the bottom face
-	format('~w~w~w~n', [D4,D5,D6]), % Print the middle layer
-	format('~w~w~w~n', [D7,D8,D9]). % Print the middle layer
+print_cube([U1,U2,U3,U4,U5,U6,U7,U8,U9,F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3,F4,F5,F6,R4,R5,
+		R6,B4,B5,B6,L4,L5,L6,F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9,D1,D2,D3,D4,D5,D6,D7,D8,D9]) :-
+	format('~w~w~w~n', [U1,U2,U3]),
+	format('~w~w~w~n', [U4,U5,U6]),
+	format('~w~w~w~n', [U7,U8,U9]),
+	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F1,F2,F3,R1,R2,R3,B1,B2,B3,L1,L2,L3]),
+	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F4,F5,F6,R4,R5,R6,B4,B5,B6,L4,L5,L6]),
+	format('~w~w~w ~w~w~w ~w~w~w ~w~w~w~n', [F7,F8,F9,R7,R8,R9,B7,B8,B9,L7,L8,L9]),
+	format('~w~w~w~n', [D1,D2,D3]),
+	format('~w~w~w~n', [D4,D5,D6]),
+	format('~w~w~w~n', [D7,D8,D9]).
 
-
+/**
+ * print_solution_moves(+Start, +Moves)
+ *
+ * Prints the sequence of moves made to solve the Rubik's cube.
+ *
+ * @arg Start the initial state of the Rubik's cube
+ * @arg Moves list of moves made to solve the Rubik's cube
+ */
 print_solution_moves(_, []).
 
 print_solution_moves(Start, [Move | Moves]) :-
-		format('\nMove: ~w', [Move]),
-		call(Move, Start, NewState),
-		nl,
-		print_cube(NewState),
-		print_solution_moves(NewState, Moves).
+	call(Move, Start, NewState),
+	nl,
+	print_cube(NewState),
+	print_solution_moves(NewState, Moves).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Representation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% cube([
-% 	U1,U2,U3,
-% 	U4,U5,U6,
-% 	U7,U8,U9,
-
-% 	F1,F2,F3, R1,R2,R3, B1,B2,B3, L1,L2,L3,
-% 	F4,F5,F6, R4,R5,R6, B4,B5,B6, L4,L5,L6,
-% 	F7,F8,F9, R7,R8,R9, B7,B8,B9, L7,L8,L9,
-
-% 	D1,D2,D3,
-% 	D4,D5,D6,
-% 	D7,D8,D9]
-% ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Solved Cube %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/**
+ * solved_cube(-Cube)
+ *
+ * Represents the solved state of the Rubik's cube.
+ * @arg Cube list representing the solved state of the Rubik's cube
+ */
 solved_cube([
 	'5','5','5',
 	'5','5','5',
@@ -125,81 +193,52 @@ solved_cube([
 	'6','6','6']
 ).
 
+/**
+ * test_if_solved(+Cube)
+ *
+ * Checks if the given cube matches the solved state of the Rubik's cube.
+ * @arg Cube the current state of the Rubik's cube
+ */
 test_if_solved(Cube) :-
 	solved_cube(SolvedCube),
 	Cube == SolvedCube.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Moves %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-transition(Cube, NextCube, Move) :-
-    (
-        u_move(Cube, NextCube),
-        Move = 'u_move'
-    ;
-        uR_move(Cube, NextCube),
-        Move = 'uR_move'
-    ;
-        d_move(Cube, NextCube),
-        Move = 'd_move'
-    ;
-        dR_move(Cube, NextCube),
-        Move = 'dR_move'
-    ;
-        r_move(Cube, NextCube),
-        Move = 'r_move'
-    ;
-        rR_move(Cube, NextCube),
-        Move = 'rR_move'
-    ;
-        l_move(Cube, NextCube),
-        Move = 'l_move'
-    ;
-        lR_move(Cube, NextCube),
-        Move = 'lR_move'
-    ;
-        f_move(Cube, NextCube),
-        Move = 'f_move'
-    ;
-        fR_move(Cube, NextCube),
-        Move = 'fR_move'
-    ;
-        b_move(Cube, NextCube),
-        Move = 'b_move'
-    ;
-        bR_move(Cube, NextCube),
-        Move = 'bR_move'
-    ;
-        m_move(Cube, NextCube),
-        Move = 'm_move'
-    ;
-        mR_move(Cube, NextCube),
-        Move = 'mR_move'
-    ;
-        e_move(Cube, NextCube),
-        Move = 'e_move'
-    ;
-        eR_move(Cube, NextCube),
-        Move = 'eR_move'
-    ;
-        s_move(Cube, NextCube),
-        Move = 's_move'
-    ;
-        sR_move(Cube, NextCube),
-        Move = 'sR_move'
-    ).
-
-move(Move, Cube, NewState) :-
-	call(Move, Cube, NewState).
-		
-
-
-
-
+/**
+ * move(+Cube, -NextCube, -Move)
+ *
+ * Selects and applies a move to the cube to produce the next state.
+ * @arg Cube     list representing the current state of the Rubik's cube
+ * @arg NextCube list representing the next state of the Rubik's cube after applying the move
+ * @arg Move     identifier for the selected move predicate
+ */
+move(Cube, NextCube, Move) :-
+	( u_move(Cube, NextCube),  Move = 'u_move'
+	; uR_move(Cube, NextCube), Move = 'uR_move'
+	; d_move(Cube, NextCube),  Move = 'd_move'
+	; dR_move(Cube, NextCube), Move = 'dR_move'
+	; r_move(Cube, NextCube),  Move = 'r_move'
+	; rR_move(Cube, NextCube), Move = 'rR_move'
+	; l_move(Cube, NextCube),  Move = 'l_move'
+	; lR_move(Cube, NextCube), Move = 'lR_move'
+	; f_move(Cube, NextCube),  Move = 'f_move'
+	; fR_move(Cube, NextCube), Move = 'fR_move'
+	; b_move(Cube, NextCube),  Move = 'b_move'
+	; bR_move(Cube, NextCube), Move = 'bR_move'
+	; m_move(Cube, NextCube),  Move = 'm_move'
+	; mR_move(Cube, NextCube), Move = 'mR_move'
+	; e_move(Cube, NextCube),  Move = 'e_move'
+	; eR_move(Cube, NextCube), Move = 'eR_move'
+	; s_move(Cube, NextCube),  Move = 's_move'
+	; sR_move(Cube, NextCube), Move = 'sR_move'
+	).
 
 /**
  * u_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the upper face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 u_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -226,6 +265,8 @@ u_move([W1,W2,W3,
  * uR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the upper face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 uR_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -252,6 +293,8 @@ uR_move([W1,W2,W3,
  * d_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the downer face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 d_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -263,7 +306,7 @@ d_move([W1,W2,W3,
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9],
 
-				[W1,W2,W3, 
+			 [W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
         G1,G2,G3, R1,R2,R3, B1,B2,B3, O1,O2,O3,
@@ -278,6 +321,8 @@ d_move([W1,W2,W3,
  * dR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the downer face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 dR_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -289,7 +334,7 @@ dR_move([W1,W2,W3,
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9],
 
-				[W1,W2,W3, 
+			 [W1,W2,W3, 
 				W4,W5,W6, 
 				W7,W8,W9,
         G1,G2,G3, R1,R2,R3, B1,B2,B3, O1,O2,O3,
@@ -304,6 +349,8 @@ dR_move([W1,W2,W3,
  * r_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the right face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 r_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -330,6 +377,8 @@ r_move([W1,W2,W3,
  * rR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the right face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 rR_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -356,6 +405,8 @@ rR_move([W1,W2,W3,
  * l_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the left face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 l_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -382,6 +433,8 @@ l_move([W1,W2,W3,
  * lR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the left face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 lR_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -408,6 +461,8 @@ lR_move([W1,W2,W3,
  * f_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the front face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 f_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -434,6 +489,8 @@ f_move([W1,W2,W3,
  * fR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the front face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 fR_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -445,7 +502,7 @@ fR_move([W1,W2,W3,
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9],
 
-				[W1,W2,W3, 
+			 [W1,W2,W3, 
 				W4,W5,W6, 
 				R1,R4,R7,
         G3,G6,G9, Y3,R2,R3, B1,B2,B3, O1,O2,W9,
@@ -460,6 +517,8 @@ fR_move([W1,W2,W3,
  * b_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the back face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 b_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -486,6 +545,8 @@ b_move([W1,W2,W3,
  * bR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the back face of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 bR_move([W1,W2,W3, 
 				W4,W5,W6, 
@@ -513,6 +574,8 @@ bR_move([W1,W2,W3,
  *
  * Predicate representing a clockwise rotation of the middle vertical slice of a Rubik's cube 
  * parallel to the left and right faces.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 m_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
@@ -540,6 +603,8 @@ m_move([Y1,Y2,Y3,
  *
  * Predicate representing a counterclockwise rotation of the middle vertical slice of a Rubik's cube 
  * parallel to the left and right faces.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 mR_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
@@ -566,6 +631,8 @@ mR_move([Y1,Y2,Y3,
  * e_move(+State, -NewState)
  *
  * Predicate representing a clockwise rotation of the middle horizontal slice of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 e_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
@@ -577,7 +644,7 @@ e_move([Y1,Y2,Y3,
 				W4,W5,W6, 
 				W7,W8,W9],
 
-				[Y1,Y2,Y3, 
+			 [Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
         G1,G2,G3, O1,O2,O3, B1,B2,B3, R1,R2,R3,
@@ -592,6 +659,8 @@ e_move([Y1,Y2,Y3,
  * eR_move(+State, -NewState)
  *
  * Predicate representing a counterclockwise rotation of the middle horizontal slice of a Rubik's cube.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 eR_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
@@ -603,7 +672,7 @@ eR_move([Y1,Y2,Y3,
 				W4,W5,W6, 
 				W7,W8,W9],
 
-				[Y1,Y2,Y3, 
+			 [Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
 				Y7,Y8,Y9,
         G1,G2,G3, O1,O2,O3, B1,B2,B3, R1,R2,R3,
@@ -619,6 +688,8 @@ eR_move([Y1,Y2,Y3,
  *
  * Predicate representing a clockwise rotation of the middle vertical slice of a Rubik's cube 
  * parallel to the front and back faces.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 s_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
@@ -630,7 +701,7 @@ s_move([Y1,Y2,Y3,
 				W4,W5,W6, 
 				W7,W8,W9],
 
-				[Y1,Y2,Y3, 
+			 [Y1,Y2,Y3, 
 				R2,R5,R8, 
 				Y7,Y8,Y9,
         G1,G2,G3, O1,Y4,O3, B1,B2,B3, R1,W4,R3,
@@ -646,6 +717,8 @@ s_move([Y1,Y2,Y3,
  *
  * Predicate representing a counterclockwise rotation of the middle vertical slice of a Rubik's cube 
  * parallel to the front and back faces.
+ * @arg State    the current state of the Rubik's cube
+ * @arg NewState the new state of the Rubik's cube after performing the move
  */
 sR_move([Y1,Y2,Y3, 
 				Y4,Y5,Y6, 
@@ -657,7 +730,7 @@ sR_move([Y1,Y2,Y3,
 				W4,W5,W6, 
 				W7,W8,W9],
 
-				[Y1,Y2,Y3, 
+			 [Y1,Y2,Y3, 
 				O2,O5,O8, 
 				Y7,Y8,Y9,
         G1,G2,G3, O1,W6,O3, B1,B2,B3, R1,Y6,R3,
