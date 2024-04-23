@@ -7,7 +7,7 @@
 # Description: Makefile.
 
 SWIPL = swipl
-PLFLAGS = -q -g start
+PLFLAGS = -q -g start --stack_limit=16g
 TARGET = flp23-log
 SOURCE = flp23-log.pl
 
