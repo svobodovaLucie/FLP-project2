@@ -83,5 +83,31 @@ The solver outputs each move of the cube until the cube is solved. For the above
 ```
 
 ### Tests
-Test inputs are provided in the `test-inputs` directory. Each input file contains the initial configuration of a Rubik's Cube. Corresponding solution files contain the expected output of the solver for each input cube (e.g., for an input cube in file `cube1.txt`, there is an expected solution in a file called `cube1_solution`). You can use the following command to compare the solver output with the expected solution:
+Test inputs are provided in the `test-inputs` directory. Each input file contains the initial configuration of a Rubik's Cube. Corresponding solution files contain the expected output of the solver for the input cubes (e.g., for an input cube in file `cube1.txt`, there is an expected solution in a file called `cube1_solution`). You can use the following command to compare the solver output with the expected solution:
 `./flp23-log < cube1.txt > cube1_res.out && diff cube1_res.out cube1_solution.txt`
+
+The time taken to solve each cube (on Merlin) is recorded below:
+
+- `assignment_cube.txt`: 0.012s (2 steps)
+- `cube1.txt`: 0m0.154s (4 steps)
+- `cube2.txt`: 0m0.090s (4 steps)
+- `cube3.txt`: 0m0.033s (4 steps)
+- `cube4.txt`: 0m0.198s (5 steps)
+- `cube5.txt`: 0m0.229s (5 steps)
+- `cube6.txt`: 0m0.040s (4 steps)
+- `cube7.txt`: 0m0.021s (2 steps)
+- `cube8.txt`: 0m24.432s (6 steps)
+- `cube9.txt`: 12m8.517s (7 steps)
+- `cube10.txt`: 5m21.638s (7 steps)
+- `cube11.txt`: 0m9.717s (6 steps)
+- `cube12.txt`: 7m52.474s (7 steps)
+- `cube13.txt`: 0m0.016s (2 steps)
+- `cube14.txt`: 0m48.350s (6 steps)
+- `cube15.txt`: 0m0.206s (4 steps)
+- `cube16.txt`: 0m0.024s (3 steps)
+- `cube_m.txt`: 0.015s (1 step)
+- `cube_mR.txt`: 0.016s (1 step)
+- `cube_e.txt`: 0.015s (1 step)
+- `cube_eR.txt`: 0.014s (1 step)
+- `cube_s.txt`: 0.016s (1 step)
+- `cube_sR.txt`: 0.016s (1 step)
