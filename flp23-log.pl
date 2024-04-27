@@ -19,7 +19,7 @@ start :-
 	prompt(_, ''),
 	read_input_cube(_, InitialCubeState),
 	print_cube(InitialCubeState),
-	iterative_deepening_search(InitialCubeState, _),
+	iterative_deepening_search(InitialCubeState),
 	halt.
 
 
@@ -88,53 +88,50 @@ flatten_list([L|Ls], FlatList) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Search Algorithm %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /**
- * depth_limited_search(+InitialCube, +State, +DepthLimit, ?Path, ?Moves)
+ * depth_limited_search(+InitialCube, +State, +DepthLimit, ?Moves)
  *
- * Performs depth-limited search to find a solution within a specified depth limit.
+ * Performs depth-limited search to find a solution within a specified depth limit
+ * and prints the found solution.
  * @arg InitialCube the initial state of the Rubik's cube
  * @arg State       the current state of the Rubik's cube
  * @arg DepthLimit  the depth limit for the search
- * @arg Path        the resulting solution path
  * @arg Moves       list of moves made to reach the current state
  */
-depth_limited_search(InitialCube, State, _, [State|Path], Moves) :-
+depth_limited_search(InitialCube, State, _, Moves) :-
 	test_if_solved(State),
-	print_solution_moves(InitialCube, Moves),
-	Path = [].
+	print_solution_moves(InitialCube, Moves).
 
-depth_limited_search(InitialCube, State, DepthLimit, [State|Path], Moves) :-
+depth_limited_search(InitialCube, State, DepthLimit, Moves) :-
 	DepthLimit > 0,
 	NextDepthLimit is DepthLimit - 1,
 	move(State, NextState, Move),
 	append(Moves, [Move], NewMoves),
-	depth_limited_search(InitialCube, NextState, NextDepthLimit, Path, NewMoves).
+	depth_limited_search(InitialCube, NextState, NextDepthLimit, NewMoves).
 
 /**
- * iterative_deepening_search(+Start, -Path)
+ * iterative_deepening_search(+Start)
  *
  * Performs an iterative deepening search to find a solution.
  * @arg Start the initial state of the Rubik's cube
- * @arg Path  the resulting solution path
  */
-iterative_deepening_search(Start, Path) :-
-	iterative_deepening_search_iter(Start, Start, 0, Path, []).
+iterative_deepening_search(Start) :-
+	iterative_deepening_search_iter(Start, Start, 0, []).
 		
 /**
- * iterative_deepening_search_iter(+InitialCube, +Start, +DepthLimit, ?Path, ?Moves)
+ * iterative_deepening_search_iter(+InitialCube, +Start, +DepthLimit, ?Moves)
  *
  * Helper predicate for performing iterative deepening search.
  * @arg InitialCube the initial state of the Rubik's cube
  * @arg Start       the current state of the Rubik's cube
  * @arg DepthLimit  the current depth limit for the search
- * @arg Path        the resulting solution path
  * @arg Moves       list of moves made to reach the current state
  */
-iterative_deepening_search_iter(InitialCube, Start, DepthLimit, Path, Moves) :-
-	depth_limited_search(InitialCube, Start, DepthLimit, Path, Moves).
+iterative_deepening_search_iter(InitialCube, Start, DepthLimit, Moves) :-
+	depth_limited_search(InitialCube, Start, DepthLimit, Moves).
 
-iterative_deepening_search_iter(InitialCube, Start, DepthLimit, Path, Moves) :-
+iterative_deepening_search_iter(InitialCube, Start, DepthLimit, Moves) :-
 	NextDepthLimit is DepthLimit + 1,
-	iterative_deepening_search_iter(InitialCube, Start, NextDepthLimit, Path, Moves).
+	iterative_deepening_search_iter(InitialCube, Start, NextDepthLimit, Moves).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cube Printing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -213,7 +210,7 @@ test_if_solved(Cube) :-
  * @arg Move     identifier for the selected move predicate
  */
 move(Cube, NextCube, Move) :-
-	( u_move(Cube, NextCube),  Move = 'u_move'
+	  u_move(Cube, NextCube),  Move = 'u_move'
 	; uR_move(Cube, NextCube), Move = 'uR_move'
 	; d_move(Cube, NextCube),  Move = 'd_move'
 	; dR_move(Cube, NextCube), Move = 'dR_move'
@@ -231,7 +228,7 @@ move(Cube, NextCube, Move) :-
 	; eR_move(Cube, NextCube), Move = 'eR_move'
 	; s_move(Cube, NextCube),  Move = 's_move'
 	; sR_move(Cube, NextCube), Move = 'sR_move'
-	).
+	.
 
 /**
  * u_move(+State, -NewState)
