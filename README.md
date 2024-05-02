@@ -6,6 +6,7 @@
 - **Email**:  xsvobo1x@stud.fit.vutbr.cz
 - **Year**:   2023/2024
 - **University**: Brno University of Technology, Faculty of Information Technology
+- Points: 7/8
 
 ### Description
 This project implements a Rubik's Cube solver in Prolog. It performs an Iterative Deepening Search (IDS) algorithm to find the optimal solution for a given Rubik's Cube. The solver reads the initial state of the cube from standard input and outputs a sequence of moves that leads to the solved state. The Iterative Deepening Search algorithm ensures that the found solution is optimal.
